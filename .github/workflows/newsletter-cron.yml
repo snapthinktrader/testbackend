@@ -16,14 +16,12 @@ jobs:
         curl -X GET \
           -H "Content-Type: application/json" \
           -H "User-Agent: GitHub-Actions" \
-          "${{ secrets.BACKEND_URL }}/api/cron/newsletter"
-      env:
-        BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          "https://testbackend-dkivrl6b6-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter"
 
     - name: Check Newsletter Status
       run: |
         sleep 30
-        curl -s "${{ secrets.BACKEND_URL }}/api/newsletter/status" | \
+        curl -s "https://testbackend-dkivrl6b6-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status" | \
         python3 -c "
         import sys, json
         data = json.load(sys.stdin)
