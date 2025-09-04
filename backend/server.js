@@ -164,7 +164,44 @@ app.use('/api/database', databaseRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/', seoRoutes); // SEO routes for sitemap.xml and robots.txt
 
-// Vercel Cron endpoint for newsletter
+// Vercel Cron endpoint for newsletter (GET - for Vercel cron)
+app.get('/api/cron/newsletter', async (req, res) => {
+  try {
+    console.log('🕐 Vercel cron job triggered for newsletter sending at 7:02 AM IST (GET)');
+    
+    // Verify this is a cron request from Vercel
+    const userAgent = req.headers['user-agent'] || '';
+    if (!userAgent.includes('vercel-cron') && !userAgent.includes('curl')) {
+      console.log('⚠️ Non-Vercel cron request detected from:', userAgent);
+    }
+    
+    const NewsletterScheduler = require('./services/NewsletterScheduler');
+    
+    // Execute the newsletter sending
+    const result = await NewsletterScheduler.sendHourlyNewsletters();
+    
+    console.log('✅ Cron job completed successfully:', result);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Newsletter cron job executed successfully at 7:02 AM IST (GET)',
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Cron job failed:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Newsletter cron job failed (GET)',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Vercel Cron endpoint for newsletter (POST - for manual testing)
 app.post('/api/cron/newsletter', async (req, res) => {
   try {
     console.log('🕐 Vercel cron job triggered for newsletter sending at 7:02 AM IST');
