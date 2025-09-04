@@ -17,7 +17,7 @@ jobs:
         response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
           -H "Content-Type: application/json" \
           -H "User-Agent: GitHub-Actions" \
-          "https://testbackend-orcfrsuv4-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
+          "https://testbackend-cse5c0u0y-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
         
         http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
         body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g')
@@ -36,7 +36,7 @@ jobs:
         sleep 30
         
         echo "📊 Checking newsletter status..."
-        status_response=$(curl -s "https://testbackend-orcfrsuv4-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
+        status_response=$(curl -s "https://testbackend-cse5c0u0y-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
         
         echo "Raw Status Response: $status_response"
         
@@ -55,7 +55,7 @@ jobs:
     - name: Check Recent Newsletter History  
       run: |
         echo "📊 Checking recent newsletter history..."
-        history_response=$(curl -s "https://testbackend-orcfrsuv4-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/history?limit=1")
+        history_response=$(curl -s "https://testbackend-cse5c0u0y-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/history?limit=1")
         
         echo "$history_response" | python3 -c "
         import sys, json
