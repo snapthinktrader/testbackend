@@ -167,6 +167,13 @@ class AdvancedCache {
   async refreshCache(key, fetchFunction, ttl) {
     try {
       const freshData = await fetchFunction();
+      
+      // 🔧 FIX: Don't cache empty arrays for articles - they might be errors
+      if (key.includes('articles') && Array.isArray(freshData) && freshData.length === 0) {
+        console.warn(`⚠️ Not caching empty articles result for key: ${key}`);
+        return freshData; // Return but don't cache
+      }
+      
       const cacheEntry = {
         data: freshData,
         timestamp: Date.now()
@@ -239,7 +246,41 @@ class AdvancedCache {
     
     this.hitCount = 0;
     this.missCount = 0;
-    console.log('All caches cleared');
+    this.metrics = {
+      hits: 0,
+      misses: 0,
+      errors: 0,
+      avgResponseTime: 0
+    };
+    
+    console.log('🧹 All caches cleared');
+  }
+
+  /**
+   * Clear specific cache keys (useful for debugging)
+   */
+  async clearPattern(pattern) {
+    // Clear memory cache
+    const memoryKeys = memoryCache.keys();
+    for (const key of memoryKeys) {
+      if (key.includes(pattern)) {
+        memoryCache.del(key);
+        console.log(`🧹 Cleared memory cache for key: ${key}`);
+      }
+    }
+    
+    // Clear Redis cache if available
+    if (redisClient) {
+      try {
+        const keys = await redisClient.keys(`*${pattern}*`);
+        if (keys.length > 0) {
+          await redisClient.del(...keys);
+          console.log(`🧹 Cleared ${keys.length} Redis keys matching pattern: ${pattern}`);
+        }
+      } catch (error) {
+        console.log('Redis pattern clear error:', error.message);
+      }
+    }
   }
 
   /**

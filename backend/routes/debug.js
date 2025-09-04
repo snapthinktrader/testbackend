@@ -92,4 +92,30 @@ router.get('/debug', async (req, res) => {
   }
 });
 
+// Route to clear all caches (for debugging optimization issues)
+router.post('/clear-cache', async (req, res) => {
+  try {
+    const { advancedCache } = require('../middleware/advancedCache');
+    
+    // Clear all caches
+    await advancedCache.clearAll();
+    
+    // Also clear any specific article caches
+    await advancedCache.clearPattern('articles');
+    
+    res.json({
+      success: true,
+      message: 'All caches cleared successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to clear cache',
+      message: error.message 
+    });
+  }
+});
+
 module.exports = router;
