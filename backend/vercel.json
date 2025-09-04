@@ -16,7 +16,7 @@
   "crons": [
     {
       "path": "/api/cron/newsletter",
-      "schedule": "32 1 * * *"
+      "schedule": "57 2 * * *"
     }
   ],
   "rewrites": [

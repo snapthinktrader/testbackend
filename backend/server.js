@@ -167,7 +167,7 @@ app.use('/', seoRoutes); // SEO routes for sitemap.xml and robots.txt
 // Vercel Cron endpoint for newsletter (GET - for Vercel cron)
 app.get('/api/cron/newsletter', async (req, res) => {
   try {
-    console.log('🕐 Vercel cron job triggered for newsletter sending at 7:02 AM IST (GET)');
+    console.log('🕐 Vercel cron job triggered for newsletter sending at 8:27 AM IST (GET)');
     
     // Verify this is a cron request from Vercel
     const userAgent = req.headers['user-agent'] || '';
@@ -184,7 +184,7 @@ app.get('/api/cron/newsletter', async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      message: 'Newsletter cron job executed successfully at 7:02 AM IST (GET)',
+      message: 'Newsletter cron job executed successfully at 8:27 AM IST (GET)',
       result: result,
       timestamp: new Date().toISOString()
     });
@@ -204,7 +204,7 @@ app.get('/api/cron/newsletter', async (req, res) => {
 // Vercel Cron endpoint for newsletter (POST - for manual testing)
 app.post('/api/cron/newsletter', async (req, res) => {
   try {
-    console.log('🕐 Vercel cron job triggered for newsletter sending at 7:02 AM IST');
+    console.log('🕐 Vercel cron job triggered for newsletter sending at 8:27 AM IST');
     
     // Verify this is a cron request from Vercel or allow manual testing
     const userAgent = req.headers['user-agent'] || '';
@@ -221,7 +221,7 @@ app.post('/api/cron/newsletter', async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      message: 'Newsletter cron job executed successfully at 7:02 AM IST',
+      message: 'Newsletter cron job executed successfully at 8:27 AM IST',
       result: result,
       timestamp: new Date().toISOString()
     });
