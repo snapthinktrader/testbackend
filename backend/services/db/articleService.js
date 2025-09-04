@@ -13,15 +13,13 @@ const ensureArticleIds = (articles) => {
     // Convert Mongoose document to plain object if needed
     const articleObj = article.toObject ? article.toObject() : { ...article };
     
-    // Debug logging
-    console.log('🔧 Transforming article, original keys:', Object.keys(articleObj));
-    
     // Ensure the article has an 'id' field for frontend compatibility
     if (!articleObj.id && articleObj._id) {
       articleObj.id = articleObj._id.toString();
       console.log('✅ Added id field:', articleObj.id);
     } else if (articleObj.id) {
-      console.log('✅ Article already has id field:', articleObj.id);
+      // Reduced logging - only show id when needed for debugging
+      // console.log('✅ Article already has id field:', articleObj.id);
     } else {
       console.log('❌ No _id field found to convert');
     }

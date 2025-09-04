@@ -373,77 +373,72 @@ router.get('/', async (req, res) => {
     // Create cache key based on mapped section and other parameters
     const cacheKey = `articles-${mappedSection || 'all'}-${limitNum}-${offsetNum}-${searchQuery || 'none'}`;
     
-    // Use optimized fetch with stale-while-revalidate caching
-    const articles = await optimizedFetch(
-      cacheKey,
-      async () => {
-        // Ensure database connection and fetch articles
-        const { waitForConnection } = require('../config/database');
-        await waitForConnection(5000); // Wait up to 5 seconds for connection
-        
-        let dbArticles;
-        
-        if (mappedSection) {
-          // Get articles for specific section with optimized DB operation
-          dbArticles = await optimizedDbOperation(() => 
-            getArticlesBySection(mappedSection, limitNum, offsetNum)
-          );
-          console.log(`🔍 Fetched articles from database for section: ${mappedSection}`);
-        } else {
-          // Get all articles for home page with optimized DB operation
-          dbArticles = await optimizedDbOperation(() => 
-            getAllArticles(limitNum, offsetNum, null, searchQuery)
-          );
-          console.log(`🔍 Fetched articles from database (all sections)`);
-        }
-        
-        // If no cached articles, fetch fresh ones from API
-        if (!dbArticles || dbArticles.length === 0) {
-          console.log('🌐 No cached articles found, fetching fresh from APIs...');
-          
-          try {
-            // Fetch from NYT Top Stories API
-            const endpoint = category === 'home' ? '/topstories/v2/home.json' : `/topstories/v2/${category}.json`;
-            const data = await fetchFromNYT(endpoint);
-            let freshArticles = processNYTArticles(data.results || []);
-            
-            // Apply search filter if provided
-            if (searchQuery) {
-              const query = searchQuery.toLowerCase();
-              freshArticles = freshArticles.filter(article => 
-                article.title.toLowerCase().includes(query) ||
-                article.content.toLowerCase().includes(query) ||
-                article.author.toLowerCase().includes(query)
-              );
-            }
-            
-            // Apply pagination
-            freshArticles = freshArticles.slice(offsetNum, offsetNum + limitNum);
-            
-            // Save articles to database in background
-            saveArticlesToDatabase(freshArticles, category).catch(err => 
-              console.log('⚠️ Background save failed:', err.message)
-            );
-            
-            // Start background commentary generation for new articles
-            generateCommentaryForArticles(freshArticles.slice(0, 5)).catch(err => 
-              console.log('⚠️ Background commentary generation failed:', err.message)
-            );
-            
-            dbArticles = freshArticles;
-          } catch (apiError) {
-            console.error('❌ Failed to fetch fresh articles:', apiError.message);
-            throw new Error('No articles available');
-          }
-        }
-        
-        // Normalize article format for frontend consistency
-        return dbArticles.map(article => normalizeArticleFormat(article));
-      },
-      'articles' // Use articles caching strategy (5 minutes with SWR)
-    );
+    // TEMPORARY FIX: Bypass optimization to avoid cached empty results
+    let articles;
     
-    console.log(`✅ Returning ${articles?.length || 0} articles`);
+    try {
+      // Ensure database connection and fetch articles directly first
+      const { waitForConnection } = require('../config/database');
+      await waitForConnection(5000); // Wait up to 5 seconds for connection
+      
+      if (mappedSection) {
+        // Get articles for specific section
+        articles = await getArticlesBySection(mappedSection, limitNum, offsetNum);
+        console.log(`🔍 Fetched ${articles?.length || 0} articles from database for section: ${mappedSection}`);
+      } else {
+        // Get all articles for home page
+        articles = await getAllArticles(limitNum, offsetNum, null, searchQuery);
+        console.log(`🔍 Fetched ${articles?.length || 0} articles from database (all sections)`);
+      }
+      
+      // If we have articles from database, use them
+      if (articles && articles.length > 0) {
+        console.log(`✅ Using ${articles.length} articles from database`);
+        const normalizedArticles = articles.map(article => normalizeArticleFormat(article));
+        res.json(normalizedArticles);
+        return;
+      }
+      
+      // If no database articles, fetch fresh from API (NO CACHING for now)
+      console.log('🌐 No database articles found, fetching fresh from API...');
+      
+      // Fetch from NYT Top Stories API
+      const endpoint = category === 'home' ? '/topstories/v2/home.json' : `/topstories/v2/${category}.json`;
+      const data = await fetchFromNYT(endpoint);
+      let freshArticles = processNYTArticles(data.results || []);
+      
+      // Apply search filter if provided
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        freshArticles = freshArticles.filter(article => 
+          article.title.toLowerCase().includes(query) ||
+          article.content.toLowerCase().includes(query) ||
+          article.author.toLowerCase().includes(query)
+        );
+      }
+      
+      // Apply pagination
+      freshArticles = freshArticles.slice(offsetNum, offsetNum + limitNum);
+      
+      // Save articles to database in background
+      saveArticlesToDatabase(freshArticles, category).catch(err => 
+        console.log('⚠️ Background save failed:', err.message)
+      );
+      
+      // Start background commentary generation for new articles
+      generateCommentaryForArticles(freshArticles.slice(0, 5)).catch(err => 
+        console.log('⚠️ Background commentary generation failed:', err.message)
+      );
+      
+      console.log(`🌐 Fetched ${freshArticles.length} fresh articles from API`);
+      articles = freshArticles.map(article => normalizeArticleFormat(article));
+      
+    } catch (error) {
+      console.error('❌ Error in articles fetch:', error.message);
+      throw error;
+    }
+    
+    console.log(`✅ Returning ${articles?.length || 0} articles (bypassed optimization)`);
     res.json(Array.isArray(articles) ? articles : []);
     
   } catch (error) {
