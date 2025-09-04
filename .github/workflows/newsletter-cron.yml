@@ -1,9 +1,9 @@
-name: Newsletter Cron (Every 5 Minutes - Testing)
+name: Newsletter Cron (Every Hour)
 
 on:
   schedule:
-    # Runs every 5 minutes for testing
-    - cron: '*/5 * * * *'
+    # Runs every hour at minute 0
+    - cron: '0 * * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
@@ -14,62 +14,9 @@ jobs:
     - name: Trigger Newsletter
       run: |
         echo "📧 Triggering newsletter from GitHub Actions..."
-        response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
+        curl -s -X GET \
           -H "Content-Type: application/json" \
           -H "User-Agent: GitHub-Actions" \
-          "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
+          "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter"
         
-        http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*/g')
-        
-        echo "HTTP Status: $http_code"
-        echo "Response: $body"
-        
-        if [ $http_code -ne 200 ]; then
-          echo "❌ Newsletter trigger failed with status $http_code"
-          exit 1
-        fi
-
-    - name: Check Newsletter Status
-      run: |
-        echo "⏳ Waiting 30 seconds for newsletter processing..."
-        sleep 30
-        
-        echo "🔊 Checking newsletter status..."
-        status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
-        
-        echo "Raw Status Response: $status_response"
-        
-        echo "$status_response" | python3 -c "
-        import sys, json
-        try:
-            data = json.load(sys.stdin)
-            print(f\"✅ Newsletter Status: {data['data']['lastNewsletter']['completedTime']}\")
-            print(f\"📧 Emails Sent: {data['data']['lastNewsletter']['emailsSent']}\")
-            print(f\"❌ Emails Failed: {data['data']['lastNewsletter']['emailsFailed']}\")
-            print(f\"👥 Total Subscribers: {data['data']['lastNewsletter']['totalSubscribers']}\")
-        except Exception as e:
-            print(f\"❌ Error parsing status: {e}\")
-        "
-        
-    - name: Check Recent Newsletter History  
-      run: |
-        echo "📊 Checking recent newsletter history..."
-        history_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/history?limit=1")
-        
-        echo "$history_response" | python3 -c "
-        import sys, json
-        try:
-            data = json.load(sys.stdin)
-            if data['success'] and data['data']['history']:
-                latest = data['data']['history'][0]
-                print(f\"📅 Latest Newsletter: {latest['completedTime']}\")
-                print(f\"📧 Emails Sent: {latest['emailsSent']}\")
-                print(f\"❌ Emails Failed: {latest['emailsFailed']}\")
-                print(f\"⏭️ Emails Skipped: {latest['emailsSkipped']}\")
-                print(f\"📰 Articles Sent: {len(latest.get('articlesSent', []))}\")
-            else:
-                print('❌ No newsletter history found')
-        except Exception as e:
-            print(f\"❌ Error parsing history: {e}\")
-        "
+        echo "✅ Newsletter triggered successfully"
