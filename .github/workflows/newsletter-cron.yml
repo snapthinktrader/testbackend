@@ -1,9 +1,9 @@
-name: Newsletter Cron (Every 5 Minutes - Testing)
+name: Newsletter Cron (Every 30 Minutes)
 
 on:
   schedule:
-    # Runs every 5 minutes (minimum GitHub Actions frequency)
-    - cron: '*/5 * * * *'
+    # Runs every 30 minutes (at :00 and :30 of each hour)
+    - cron: '*/30 * * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
