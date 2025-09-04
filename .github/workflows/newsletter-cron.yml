@@ -1,9 +1,9 @@
-name: Newsletter Cron (Every 30 Minutes)
+name: Newsletter Cron (Every 5 Minutes - Testing)
 
 on:
   schedule:
-    # Runs every 30 minutes (at :00 and :30 of each hour)
-    - cron: '*/30 * * * *'
+    # Runs every 5 minutes for testing
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
@@ -17,10 +17,10 @@ jobs:
         response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
           -H "Content-Type: application/json" \
           -H "User-Agent: GitHub-Actions" \
-          "https://testbackend-rews1nfsf-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
+          "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
         
         http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g')
+        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*/g')
         
         echo "HTTP Status: $http_code"
         echo "Response: $body"
@@ -35,8 +35,8 @@ jobs:
         echo "⏳ Waiting 30 seconds for newsletter processing..."
         sleep 30
         
-        echo "📊 Checking newsletter status..."
-        status_response=$(curl -s "https://testbackend-rews1nfsf-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
+        echo "🔊 Checking newsletter status..."
+        status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
         
         echo "Raw Status Response: $status_response"
         
@@ -55,7 +55,7 @@ jobs:
     - name: Check Recent Newsletter History  
       run: |
         echo "📊 Checking recent newsletter history..."
-        history_response=$(curl -s "https://testbackend-rews1nfsf-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/history?limit=1")
+        history_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/history?limit=1")
         
         echo "$history_response" | python3 -c "
         import sys, json
