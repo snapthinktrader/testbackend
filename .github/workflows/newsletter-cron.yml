@@ -1,0 +1,32 @@
+name: Hourly Newsletter Cron
+
+on:
+  schedule:
+    # Runs every hour at minute 15 (e.g., 1:15, 2:15, 3:15, etc.)
+    - cron: '15 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  send-newsletter:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger Newsletter
+      run: |
+        curl -X GET \
+          -H "Content-Type: application/json" \
+          -H "User-Agent: GitHub-Actions" \
+          "${{ secrets.BACKEND_URL }}/api/cron/newsletter"
+      env:
+        BACKEND_URL: ${{ secrets.BACKEND_URL }}
+
+    - name: Check Newsletter Status
+      run: |
+        sleep 30
+        curl -s "${{ secrets.BACKEND_URL }}/api/newsletter/status" | \
+        python3 -c "
+        import sys, json
+        data = json.load(sys.stdin)
+        print(f\"Newsletter Status: {data['data']['lastNewsletter']['completedTime']}\")
+        print(f\"Emails Sent: {data['data']['lastNewsletter']['emailsSent']}\")
+        "
