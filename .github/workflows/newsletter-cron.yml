@@ -1,0 +1,44 @@
+name: Newsletter Cron (Fresh Hourly)
+
+on:
+  schedule:
+    # Runs every hour at minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  send-newsletter:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger Newsletter
+      run: |
+        echo "📧 Triggering newsletter from GitHub Actions (Fresh Workflow)..."
+        response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
+          -H "Content-Type: application/json" \
+          -H "User-Agent: GitHub-Actions-Fresh" \
+          "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
+        
+        http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g')
+        
+        echo "HTTP Status: $http_code"
+        echo "Response: $body"
+        
+        if [ $http_code -ne 200 ]; then
+          echo "❌ Newsletter trigger failed with status $http_code"
+          exit 1
+        fi
+        
+        echo "✅ Newsletter triggered successfully"
+
+    - name: Verify Newsletter Status
+      run: |
+        echo "⏳ Waiting 30 seconds for newsletter processing..."
+        sleep 30
+        
+        echo "📊 Checking newsletter status..."
+        status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
+        
+        echo "Status Response: $status_response"
+        echo "✅ Newsletter verification completed"
