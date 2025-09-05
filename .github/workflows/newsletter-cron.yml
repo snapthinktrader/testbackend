@@ -1,9 +1,9 @@
-name: Newsletter Cron (Fresh Hourly)
+name: Newsletter Cron (Every 4 Hours)
 
 on:
   schedule:
-    # Runs every hour at minute 0
-    - cron: '0 * * * *'
+    # Runs every 4 hours at minute 0
+    - cron: '0 */4 * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
@@ -11,16 +11,47 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Trigger Newsletter
+    - name: Check Last Run Time
+      id: check-time
       run: |
-        echo "📧 Triggering newsletter from GitHub Actions (Fresh Workflow)..."
+        echo "🕒 Checking last newsletter run time..."
+        current_time=$(date +%s)
+        echo "Current timestamp: $current_time"
+        
+        # Check if newsletter was sent in the last 3.5 hours (12600 seconds)
+        status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status" || echo "{}")
+        echo "Status response: $status_response"
+        
+        # Extract last run time if available
+        last_run=$(echo "$status_response" | jq -r ".lastRun // empty" 2>/dev/null || echo "")
+        
+        if [ -n "$last_run" ]; then
+          last_run_timestamp=$(date -d "$last_run" +%s 2>/dev/null || echo "0")
+          time_diff=$((current_time - last_run_timestamp))
+          
+          if [ $time_diff -lt 12600 ]; then
+            echo "⏭️ Newsletter was sent recently ($time_diff seconds ago). Skipping..."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+        fi
+        
+        echo "✅ Safe to send newsletter"
+        echo "should_run=true" >> $GITHUB_OUTPUT
+
+    - name: Trigger Newsletter
+      if: steps.check-time.outputs.should_run == 'true'
+      run: |
+        echo "📧 Triggering newsletter from GitHub Actions (4-Hour Schedule)..."
         response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET \
           -H "Content-Type: application/json" \
-          -H "User-Agent: GitHub-Actions-Fresh" \
+          -H "User-Agent: GitHub-Actions-4Hour" \
+          -H "X-Workflow-Source: github-actions" \
           "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
         
-        http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
-        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g')
+        http_code=$(echo $response | tr -d '
+' | sed -e 's/.*HTTPSTATUS://\')
+        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g\')
         
         echo "HTTP Status: $http_code"
         echo "Response: $body"
@@ -33,12 +64,17 @@ jobs:
         echo "✅ Newsletter triggered successfully"
 
     - name: Verify Newsletter Status
+      if: steps.check-time.outputs.should_run == 'true'
       run: |
-        echo "⏳ Waiting 30 seconds for newsletter processing..."
-        sleep 30
+        echo "⏳ Waiting 45 seconds for newsletter processing..."
+        sleep 45
         
         echo "📊 Checking newsletter status..."
         status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
-        
         echo "Status Response: $status_response"
         echo "✅ Newsletter verification completed"
+
+    - name: Skip Message
+      if: steps.check-time.outputs.should_run == 'false'
+      run: |
+        echo "⏭️ Newsletter sending skipped - was sent recently to prevent duplicates"
