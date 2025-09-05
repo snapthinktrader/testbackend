@@ -19,7 +19,7 @@ jobs:
         echo "Current timestamp: $current_time"
         
         # Check if newsletter was sent in the last 3.5 hours (12600 seconds)
-        status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status" || echo "{}")
+        status_response=$(curl -s "https://testbackend-3oksnfjoy-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status" || echo "{}")
         echo "Status response: $status_response"
         
         # Extract last run time if available
@@ -47,11 +47,10 @@ jobs:
           -H "Content-Type: application/json" \
           -H "User-Agent: GitHub-Actions-4Hour" \
           -H "X-Workflow-Source: github-actions" \
-          "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
+          "https://testbackend-3oksnfjoy-ajay-s-projects-7337fb6b.vercel.app/api/cron/newsletter")
         
-        http_code=$(echo $response | tr -d '
-' | sed -e 's/.*HTTPSTATUS://\')
-        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g\')
+        http_code=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+        body=$(echo $response | sed -e 's/HTTPSTATUS\:.*//g')
         
         echo "HTTP Status: $http_code"
         echo "Response: $body"
@@ -70,7 +69,7 @@ jobs:
         sleep 45
         
         echo "📊 Checking newsletter status..."
-        status_response=$(curl -s "https://testbackend-qbv22nq90-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
+        status_response=$(curl -s "https://testbackend-3oksnfjoy-ajay-s-projects-7337fb6b.vercel.app/api/newsletter/status")
         echo "Status Response: $status_response"
         echo "✅ Newsletter verification completed"
 
